@@ -36,3 +36,16 @@
 - [ ] Frontend: Display "Posted by you" indicator on user's own messages
 - [ ] Frontend: Show expiration notification alerts
 - [x] Vitest tests for user dashboard and notification logic
+
+
+## Design Enhancement & Engagement Features
+- [x] Update database schema: add likes/dislikes table and CAPTCHA verification tracking
+- [x] Backend API endpoint for Like/Dislike functionality
+- [ ] Backend API endpoint for CAPTCHA token verification
+- [x] Require authentication for posting (protectedProcedure)
+- [x] Enhance overall UI design with better colors, typography, and layout
+- [ ] Add CAPTCHA verification widget before posting
+- [x] Implement Like/Dislike buttons on message cards
+- [x] Display like/dislike counts on each message
+- [x] Prevent unauthenticated users from posting (show login prompt)
+- [ ] Vitest tests for Like/Dislike and CAPTCHA logic

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Heart, HeartOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Message } from "../../../drizzle/schema";
 
 interface MessageCardProps {
-  message: Message;
+  message: Message & { likes?: number; dislikes?: number; userReaction?: "like" | "dislike" | null };
   onDelete?: (id: number) => void;
+  onReact?: (messageId: number, reactionType: "like" | "dislike") => void;
 }
 
 /**
@@ -13,7 +14,7 @@ interface MessageCardProps {
  * The countdown shows hours:minutes:seconds until the message expires.
  * A progress bar indicates the time remaining as a visual indicator.
  */
-export function MessageCard({ message, onDelete }: MessageCardProps) {
+export function MessageCard({ message, onDelete, onReact }: MessageCardProps) {
   const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [progress, setProgress] = useState<number>(100);
   const [isExpired, setIsExpired] = useState<boolean>(false);
@@ -64,7 +65,7 @@ export function MessageCard({ message, onDelete }: MessageCardProps) {
       </p>
 
       {/* Progress bar and countdown */}
-      <div className="space-y-2">
+      <div className="space-y-2 mb-4">
         {/* Progress bar */}
         <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
           <div
@@ -84,20 +85,56 @@ export function MessageCard({ message, onDelete }: MessageCardProps) {
         </div>
       </div>
 
-      {/* Delete button */}
-      {onDelete && (
-        <div className="mt-4 pt-3 border-t border-border">
+      {/* Reactions and actions */}
+      <div className="flex items-center justify-between gap-2 pt-3 border-t border-border">
+        <div className="flex items-center gap-2">
+          {/* Like button */}
+          {onReact && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onReact(message.id, "like")}
+                className={`text-xs ${
+                  message.userReaction === "like"
+                    ? "text-destructive bg-destructive/10"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Heart className={`w-4 h-4 mr-1 ${message.userReaction === "like" ? "fill-current" : ""}`} />
+                {message.likes || 0}
+              </Button>
+
+              {/* Dislike button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onReact(message.id, "dislike")}
+                className={`text-xs ${
+                  message.userReaction === "dislike"
+                    ? "text-muted-foreground bg-muted"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <HeartOff className={`w-4 h-4 mr-1 ${message.userReaction === "dislike" ? "fill-current" : ""}`} />
+                {message.dislikes || 0}
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Delete button */}
+        {onDelete && (
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onDelete(message.id)}
-            className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
+            <Trash2 className="w-4 h-4" />
           </Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

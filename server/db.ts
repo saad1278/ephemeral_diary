@@ -269,3 +269,104 @@ export async function updateUserPreferences(
 
   return true;
 }
+
+
+/**
+ * Add or update a reaction (like/dislike) on a message.
+ */
+export async function addOrUpdateReaction(
+  messageId: number,
+  userId: number,
+  reactionType: "like" | "dislike"
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot add reaction: database not available");
+    return false;
+  }
+
+  try {
+    const { messageReactions } = await import("../drizzle/schema");
+    
+    // Check if reaction already exists
+    const existing = await db
+      .select()
+      .from(messageReactions)
+      .where(and(eq(messageReactions.messageId, messageId), eq(messageReactions.userId, userId)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      // Update existing reaction
+      await db
+        .update(messageReactions)
+        .set({ reactionType })
+        .where(and(eq(messageReactions.messageId, messageId), eq(messageReactions.userId, userId)));
+    } else {
+      // Insert new reaction
+      await db.insert(messageReactions).values({
+        messageId,
+        userId,
+        reactionType,
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to add reaction:", error);
+    return false;
+  }
+}
+
+/**
+ * Get reaction counts for a message.
+ */
+export async function getReactionCounts(messageId: number): Promise<{ likes: number; dislikes: number }> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get reactions: database not available");
+    return { likes: 0, dislikes: 0 };
+  }
+
+  try {
+    const { messageReactions } = await import("../drizzle/schema");
+    
+    const reactions = await db
+      .select()
+      .from(messageReactions)
+      .where(eq(messageReactions.messageId, messageId));
+
+    const likes = reactions.filter((r) => r.reactionType === "like").length;
+    const dislikes = reactions.filter((r) => r.reactionType === "dislike").length;
+
+    return { likes, dislikes };
+  } catch (error) {
+    console.error("[Database] Failed to get reactions:", error);
+    return { likes: 0, dislikes: 0 };
+  }
+}
+
+/**
+ * Get user's reaction on a specific message.
+ */
+export async function getUserReaction(messageId: number, userId: number): Promise<"like" | "dislike" | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user reaction: database not available");
+    return null;
+  }
+
+  try {
+    const { messageReactions } = await import("../drizzle/schema");
+    
+    const reaction = await db
+      .select()
+      .from(messageReactions)
+      .where(and(eq(messageReactions.messageId, messageId), eq(messageReactions.userId, userId)))
+      .limit(1);
+
+    return reaction.length > 0 ? reaction[0].reactionType : null;
+  } catch (error) {
+    console.error("[Database] Failed to get user reaction:", error);
+    return null;
+  }
+}

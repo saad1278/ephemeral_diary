@@ -8,3 +8,23 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
 };
+
+// Validate required environment variables
+if (!ENV.appId) {
+  console.warn("[ENV] WARNING: VITE_APP_ID is not set");
+}
+if (!ENV.cookieSecret) {
+  console.warn("[ENV] WARNING: JWT_SECRET is not set");
+}
+if (!ENV.oAuthServerUrl) {
+  console.warn("[ENV] WARNING: OAUTH_SERVER_URL is not set");
+}
+if (!ENV.databaseUrl) {
+  console.warn("[ENV] WARNING: DATABASE_URL is not set");
+}
+
+// Log OAuth configuration status
+console.log("[ENV] OAuth Configuration:");
+console.log("[ENV] - App ID configured:", !!ENV.appId);
+console.log("[ENV] - OAuth Server URL configured:", !!ENV.oAuthServerUrl);
+console.log("[ENV] - Cookie Secret configured:", !!ENV.cookieSecret);

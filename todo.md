@@ -49,3 +49,9 @@
 - [x] Display like/dislike counts on each message
 - [x] Prevent unauthenticated users from posting (show login prompt)
 - [ ] Vitest tests for Like/Dislike and CAPTCHA logic
+
+## OAuth & Error Handling Improvements
+- [x] Enhanced OAuth callback error logging
+- [x] Added environment variable validation
+- [x] Improved context creation logging
+- [x] Better error messages for debugging

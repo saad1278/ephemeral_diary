@@ -25,4 +25,17 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Messages table for storing ephemeral posts.
+ * Each message has a creation timestamp and an expiration time (24 hours after creation).
+ * The expiresAt field is used for both display (countdown) and cleanup (deletion).
+ */
+export const messages = mysqlTable("messages", {
+  id: int("id").autoincrement().primaryKey(),
+  content: text("content").notNull(), // Message text (up to 65,535 characters)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  expiresAt: timestamp("expiresAt").notNull(), // 24 hours after createdAt
+});
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;

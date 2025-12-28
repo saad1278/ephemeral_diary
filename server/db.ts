@@ -1,6 +1,6 @@
-import { eq, gt, lte, desc } from "drizzle-orm";
+import { eq, gt, lte, desc, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, messages } from "../drizzle/schema";
+import { InsertUser, users, messages, userPreferences } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -185,6 +185,87 @@ export async function deleteMessageById(id: number): Promise<boolean> {
   }
 
   await db.delete(messages).where(eq(messages.id, id));
+
+  return true;
+}
+
+
+/**
+ * Get all messages posted by a specific user (for dashboard).
+ * Returns messages ordered by creation time (newest first).
+ */
+export async function getUserMessages(userId: number): Promise<typeof messages.$inferSelect[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user messages: database not available");
+    return [];
+  }
+
+  const result = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.userId, userId))
+    .orderBy(desc(messages.createdAt));
+
+  return result;
+}
+
+/**
+ * Get or create user preferences.
+ */
+export async function getUserPreferences(userId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const existing = await db
+    .select()
+    .from(userPreferences)
+    .where(eq(userPreferences.userId, userId))
+    .limit(1);
+
+  if (existing.length > 0) {
+    return existing[0];
+  }
+
+  // Create default preferences
+  await db.insert(userPreferences).values({
+    userId,
+    notificationsEnabled: "true",
+    notifyBefore: 60,
+  });
+
+  const created = await db
+    .select()
+    .from(userPreferences)
+    .where(eq(userPreferences.userId, userId))
+    .limit(1);
+
+  return created[0];
+}
+
+/**
+ * Update user notification preferences.
+ */
+export async function updateUserPreferences(
+  userId: number,
+  notificationsEnabled: boolean,
+  notifyBefore: number
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update preferences: database not available");
+    return false;
+  }
+
+  await db
+    .update(userPreferences)
+    .set({
+      notificationsEnabled: notificationsEnabled ? "true" : "false",
+      notifyBefore,
+    })
+    .where(eq(userPreferences.userId, userId));
 
   return true;
 }

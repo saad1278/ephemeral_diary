@@ -1,12 +1,14 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { createMessage, getActiveMessages, deleteMessageById } from "./db";
+import { createMessage, getActiveMessages, deleteMessageById, getUserMessages, getUserPreferences, updateUserPreferences } from "./db";
+import { eq } from "drizzle-orm";
+import { messages as messagesTable } from "../drizzle/schema";
+import { getDb } from "./db";
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -22,8 +24,17 @@ export const appRouter = router({
   messages: router({
     create: publicProcedure
       .input(z.object({ content: z.string().min(1).max(500) }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const message = await createMessage(input.content);
+        
+        // If user is authenticated, associate message with their ID
+        if (ctx.user?.id) {
+          const db = await getDb();
+          if (db) {
+            await db.update(messagesTable).set({ userId: ctx.user.id }).where(eq(messagesTable.id, message.id));
+          }
+        }
+        
         return message;
       }),
 
@@ -37,6 +48,32 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const deleted = await deleteMessageById(input.id);
         return { success: deleted };
+      }),
+  }),
+
+  dashboard: router({
+    getMyMessages: protectedProcedure.query(async ({ ctx }) => {
+      const userMessages = await getUserMessages(ctx.user.id);
+      return userMessages;
+    }),
+
+    getPreferences: protectedProcedure.query(async ({ ctx }) => {
+      const preferences = await getUserPreferences(ctx.user.id);
+      return preferences;
+    }),
+
+    updatePreferences: protectedProcedure
+      .input(z.object({
+        notificationsEnabled: z.boolean(),
+        notifyBefore: z.number().min(5).max(1440),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const success = await updateUserPreferences(
+          ctx.user.id,
+          input.notificationsEnabled,
+          input.notifyBefore
+        );
+        return { success };
       }),
   }),
 });

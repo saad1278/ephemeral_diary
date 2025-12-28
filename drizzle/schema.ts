@@ -26,12 +26,18 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
+ * Add foreign key relationship from messages to users.
+ * This ensures data integrity when users are deleted.
+ */
+
+/**
  * Messages table for storing ephemeral posts.
  * Each message has a creation timestamp and an expiration time (24 hours after creation).
  * The expiresAt field is used for both display (countdown) and cleanup (deletion).
  */
 export const messages = mysqlTable("messages", {
   id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"), // Optional: null for anonymous messages, user id for authenticated messages
   content: text("content").notNull(), // Message text (up to 65,535 characters)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   expiresAt: timestamp("expiresAt").notNull(), // 24 hours after createdAt
@@ -39,3 +45,18 @@ export const messages = mysqlTable("messages", {
 
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = typeof messages.$inferInsert;
+
+/**
+ * User preferences table for storing notification settings and other user preferences.
+ */
+export const userPreferences = mysqlTable("userPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  notificationsEnabled: mysqlEnum("notificationsEnabled", ["true", "false"]).default("true").notNull(),
+  notifyBefore: int("notifyBefore").default(60).notNull(), // Minutes before expiration to send notification (default: 60 minutes)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertUserPreferences = typeof userPreferences.$inferInsert;

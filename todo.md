@@ -23,3 +23,16 @@
 
 ## Deployment
 - [x] Final checkpoint and project delivery
+
+
+## Optional User Authentication (New Feature)
+- [x] Update database schema: add userId to messages table, add user preferences table
+- [x] Backend API endpoint for user dashboard (get user's messages with expiration times)
+- [x] Backend API endpoint for notification preferences (enable/disable notifications)
+- [ ] Backend API endpoint to send expiration notifications (24 hours before expiry)
+- [x] Frontend: Add login/logout button in header
+- [x] Frontend: Create user dashboard page showing message history
+- [x] Frontend: Add notification settings page
+- [ ] Frontend: Display "Posted by you" indicator on user's own messages
+- [ ] Frontend: Show expiration notification alerts
+- [x] Vitest tests for user dashboard and notification logic

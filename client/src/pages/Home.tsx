@@ -1,28 +1,23 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageCard } from "@/components/MessageCard";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, LogIn, LayoutDashboard } from "lucide-react";
+import { useLocation } from "wouter";
+import { getLoginUrl } from "@/const";
 import type { Message } from "../../../drizzle/schema";
 
-/**
- * Home page for the Ephemeral Diary.
- * Features:
- * - Anonymous message posting form
- * - Real-time message feed with countdown timers
- * - Elegant minimalist design
- * - Instagram footer link
- */
 export default function Home() {
+  const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // Fetch active messages
   const { data: fetchedMessages, isLoading: isLoadingMessages, refetch } = trpc.messages.list.useQuery();
 
-  // Create message mutation
   const createMutation = trpc.messages.create.useMutation({
     onSuccess: (newMessage) => {
       setContent("");
@@ -34,7 +29,6 @@ export default function Home() {
     },
   });
 
-  // Delete message mutation
   const deleteMutation = trpc.messages.delete.useMutation({
     onSuccess: (result, variables) => {
       if (result.success) {
@@ -47,7 +41,6 @@ export default function Home() {
     },
   });
 
-  // Update messages when fetched
   useEffect(() => {
     if (fetchedMessages) {
       setMessages(fetchedMessages);
@@ -74,14 +67,49 @@ export default function Home() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="container py-6">
-          <div className="text-center">
-            <h1 className="text-3xl md:text-4xl font-light text-foreground tracking-tight">
-              Ephemeral Diary
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2">
-              Share your thoughts. They disappear in 24 hours.
-            </p>
+        <div className="container py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-center flex-1">
+              <h1 className="text-3xl md:text-4xl font-light text-foreground tracking-tight">
+                Ephemeral Diary
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Share your thoughts. They disappear in 24 hours.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              {user ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLocation("/dashboard")}
+                    className="text-accent hover:text-accent hover:bg-accent/10"
+                  >
+                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => logout()}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => (window.location.href = getLoginUrl())}
+                  className="text-accent hover:text-accent hover:bg-accent/10"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </header>
